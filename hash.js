@@ -82,7 +82,7 @@ var Hash = new function() {
 				//for the love of god, please don't traverse DOM nodes
 				if (typeof obs[i][key] === 'object' && out[key] && !out.nodeType && !obs[i][key].nodeType)
 					out[key] = this.merge(out[key], obs[i][key])
-				else if (Number(key) % 1 === 0)
+				else if (Number(key) % 1 === 0 && out.forEach)
 					out.push(obs[i][key])
 				else
 					out[key] = obs[i][key] // but you can store them, k?
@@ -99,8 +99,12 @@ var Hash = new function() {
 			token = tokens.shift()
 			nextPath = tokens.join('.')
 			for (var key in data) if (data.hasOwnProperty(key)) {
-				if (this._matchToken(key, token))
-					data[key] = this.insert(data[key], nextPath, values)
+				if (this._matchToken(key, token)) {
+					if(!nextPath)
+						data[key] = values
+					else
+						data[key] = this.insert(data[key], nextPath, values)
+				}
 			}
 		} else {
 			expand[path] = values
@@ -109,7 +113,7 @@ var Hash = new function() {
 		return data
 	},
 	this.remove = function(data, path) {
-		var tokens = this._tokenize(path), match
+		var tokens = this._tokenize(path), match, token, nextPath
 		if (path.indexOf('{') === -1) {
 			return this._simpleOp('remove', data, tokens)
 		}
