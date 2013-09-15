@@ -29,9 +29,8 @@ var Hash = new function() {
 	this._matches = function(val, condition) {
 		
 	},
-	this.expand = function(data, delimiter) {
-		var path, tokens, delimiter = delimiter || '.',
-			parent, child, out = {}, cleanPath, val, curr
+	this.expand = function(data) {
+		var path, tokens, parent, child, out = {}, cleanPath, val, curr
 			
 		if(!data.length)
 			data = [data]
@@ -39,7 +38,7 @@ var Hash = new function() {
 		for (var i = 0; i < data.length; i++) {
 			curr = data[i]
 			for (var path in curr) if(curr.hasOwnProperty(path)) {
-				tokens = this._tokenize(path, delimiter).reverse()
+				tokens = this._tokenize(path).reverse()
 				val = typeof curr[path] === 'function' ? curr[path]() : curr[path]
 				if (tokens[0] === '' || tokens[0] === '{n}') {
 					child = []
@@ -86,23 +85,70 @@ var Hash = new function() {
 				else if (Number(key) % 1 === 0)
 					out.push(obs[i][key])
 				else
-					out[key] = obs[i][key]
+					out[key] = obs[i][key] // but you can store them, k?
 			}
 		}
 		return out
 	},
-	this.insert = function(data, path, values, delimiter) {
-		var tokens = this._tokenize(path, delimiter)
+	this.insert = function(data, path, values) {
+		var tokens = this._tokenize(path), token, nextPath, expand = {}
 		if (path.indexOf('{') === -1) {
-			
+			return this._simpleOp('insert', data, tokens, values)
+		}
+		if (!$.isEmptyObject(data)) {
+			token = tokens.shift()
+			nextPath = tokens.join('.')
+			for (var key in data) if (data.hasOwnProperty(key)) {
+				if (this._matchToken(key, token))
+					data[key] = this.insert(data[key], nextPath, values)
+			}
 		} else {
-			
+			expand[path] = values
+			return this.expand([expand])
+		}
+		return data
+	},
+	this.remove = function(data, path) {
+		var tokens = this._tokenize(path), match
+		if (path.indexOf('{') === -1) {
+			return this._simpleOp('remove', data, tokens)
+		}
+		token = tokens.shift()
+		nextPath = tokens.join('.')
+		for (var key in data) if (data.hasOwnProperty(key)) {
+			match = this._matchToken(key, token)
+			if (match && typeof data[key] === 'object')
+				data[key] = this.remove(data[key], nextPath)
+			else if (match)
+				delete data[key]
+		}
+		return data
+	},
+	this._simpleOp = function(op, data, tokens, values) {
+		var hold = data
+		for (var i = 0; i < tokens.length; i++) {
+			if (op === 'insert') {
+				if (i === tokens.length -1) {
+					hold[tokens[i]] = values
+					return data
+				}
+				if (typeof hold[tokens[i]] === 'undefined') {
+					hold[tokens[i]] = {}
+				}
+				hold = hold[tokens[i]]
+			} else if (op === 'remove') {
+				if (i === tokens.length -1) {
+					delete hold[tokens[i]]
+					return data
+				}
+				if (typeof hold[tokens[i]] === 'undefined') {
+					return data
+				}
+				hold = hold[tokens[i]]
+			}
 		}
 	},
-	this._simpleOp = function(op, data, path, values) {
-		
-	},
-	this._tokenize = function(path, delimiter) {
-		return ( (path.indexOf('data[') > -100) ? path.replace(/^data\[|^\[/, '').replace(/\]$/, '') : path ).split(delimiter || '.')
+	this._tokenize = function(path) {
+		return ( (path.indexOf('data[') > -1) ? path.replace(/^data\[|^\[/, '').replace(/\]$/, '').replace(/\]\[/g, '.') : path ).split('.')
 	}
 }()
