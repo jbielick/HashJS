@@ -1,5 +1,5 @@
 var Hash = new function() {
-	this.extract = function(data, path) {
+	this.extract =  function(data, path) {
 		if(!new RegExp('[{\[]').test(path))
 			return this.get(data, path) || []
 		var tokens = this._tokenize(path),
@@ -17,7 +17,7 @@ var Hash = new function() {
 		}
 		return context.set
 	},
-	this._matchToken = function(key, token) {
+	this._matchToken =  function(key, token) {
 		if (token === '{n}')
 			return (Number(key) % 1 === 0)
 		if (token === '{s}')
@@ -26,10 +26,10 @@ var Hash = new function() {
 			return (key == token)
 		return (key === token)
 	},
-	this._matches = function(val, condition) {
+	this._matches =  function(val, condition) {
 		
 	},
-	this.expand = function(data) {
+	this.expand =  function(data) {
 		var path, tokens, parent, child, out = {}, cleanPath, val, curr
 			
 		if(!data.length)
@@ -40,12 +40,16 @@ var Hash = new function() {
 			for (var path in curr) if(curr.hasOwnProperty(path)) {
 				tokens = this._tokenize(path).reverse()
 				val = typeof curr[path] === 'function' ? curr[path]() : curr[path]
-				if (tokens[0] === '' || tokens[0] === '{n}') {
+				if (tokens[0] === '{n}') {
 					child = []
 					if (typeof val === 'object')
 						child = val || ''
-					else
-						$.merge(child, val)
+					else {
+						if ($.isArray(val))
+							$.merge(child, val)
+						else
+							child.push(val)
+					}
 				} else {
 					child = {}
 					child[tokens[0]] = val
@@ -63,9 +67,9 @@ var Hash = new function() {
 		}
 		return out
 	},
-	this.get = function(data, path, delimiter) {
+	this.get =  function(data, path) {
 		var out = data,
-			tokens = this._tokenize(path, delimiter)
+			tokens = this._tokenize(path)
 		for (var i = 0; i < tokens.length; i++) {
 			if (typeof out === 'object' && typeof out[tokens[i]] !== 'undefined')
 				out = out[tokens[i]]
@@ -74,15 +78,19 @@ var Hash = new function() {
 		}
 		return out
 	},
-	this.merge = function() {
-		var obs = Array.prototype.slice.call(arguments),
-			out = obs.shift()
+	this.merge =  function() {
+		var obs = Array.prototype.slice.call(arguments), out, dest = false
+		
+		if (typeof arguments[0] === 'boolean')
+			dest = obs.shift()
+			
+		out = obs.shift()
 		for (var i = 0; i < obs.length; i++) {
 			for (var key in obs[i]) if (obs[i].hasOwnProperty(key)) {
 				//for the love of god, please don't traverse DOM nodes
 				if (typeof obs[i][key] === 'object' && out[key] && !out.nodeType && !obs[i][key].nodeType)
-					out[key] = this.merge(out[key], obs[i][key])
-				else if (Number(key) % 1 === 0 && out.forEach)
+					out[key] = this.merge(dest, out[key], obs[i][key])
+				else if (Number(key) % 1 === 0 && $.isArray(out) && $.isArray(obs[i]) && !dest)
 					out.push(obs[i][key])
 				else
 					out[key] = obs[i][key] // but you can store them, k?
@@ -90,7 +98,7 @@ var Hash = new function() {
 		}
 		return out
 	},
-	this.insert = function(data, path, values) {
+	this.insert =  function(data, path, values) {
 		var tokens = this._tokenize(path), token, nextPath, expand = {}
 		if (path.indexOf('{') === -1) {
 			return this._simpleOp('insert', data, tokens, values)
@@ -112,7 +120,7 @@ var Hash = new function() {
 		}
 		return data
 	},
-	this.remove = function(data, path) {
+	this.remove =  function(data, path) {
 		var tokens = this._tokenize(path), match, token, nextPath
 		if (path.indexOf('{') === -1) {
 			return this._simpleOp('remove', data, tokens)
@@ -128,7 +136,7 @@ var Hash = new function() {
 		}
 		return data
 	},
-	this._simpleOp = function(op, data, tokens, values) {
+	this._simpleOp =  function(op, data, tokens, values) {
 		var hold = data
 		for (var i = 0; i < tokens.length; i++) {
 			if (op === 'insert') {
@@ -152,7 +160,11 @@ var Hash = new function() {
 			}
 		}
 	},
-	this._tokenize = function(path) {
-		return ( (path.indexOf('data[') > -1) ? path.replace(/^data\[|^\[/, '').replace(/\]$/, '').replace(/\]\[/g, '.') : path ).split('.')
+	this._tokenize =  function(path) {
+		if (path.indexOf('data[') === -1) {
+			return path.split('.')
+		} else {
+			return path.replace(/^data/, '').replace(/^\[|\]$/g, '').split('][').map(function(v) {return v === '' ? '{n}' : v })
+		}
 	}
 }()
