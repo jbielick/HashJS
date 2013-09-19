@@ -166,5 +166,34 @@ var Hash = new function() {
 		} else {
 			return path.replace(/^data/, '').replace(/^\[|\]$/g, '').split('][').map(function(v) {return v === '' ? '{n}' : v })
 		}
+	},
+	this.flatten =  function(data, separator) {
+		var path = '', stack = [], out = {}, key, el, curr, 
+			separator = separator ? separator : '.', data = JSON.parse(JSON.stringify(data))
+		while (!$.isEmptyObject(data)) {
+			key = this.keys(data)[0]
+			el = data[key]
+			delete data[key]
+			if (typeof el !== 'object')
+				out[path + key] = el
+			else {
+				if (!$.isEmptyObject(data)) {
+					stack.push([data,path])
+				}
+				data = el
+				path += key + separator
+			}
+			if ($.isEmptyObject(data) && !$.isEmptyObject(stack)) {
+				curr = stack.pop()
+				data = curr[0], path = curr[1]
+			}
+		}
+		return out
+	},
+	this.keys =  function(obj) {
+		var keys = []
+		for (var key in obj) if (obj.hasOwnProperty(key))
+			keys.push(key)
+		return keys
 	}
 }()
