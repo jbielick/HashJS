@@ -100,7 +100,7 @@ var Hash = new function() {
 	},
 	this.insert =  function(data, path, values) {
 		var tokens = this._tokenize(path), token, nextPath, expand = {}
-		if (path.indexOf('{') === -1) {
+		if (path.indexOf('{') === -1 && path.indexOf('[]') === -1) {
 			return this._simpleOp('insert', data, tokens, values)
 		}
 		if (!$.isEmptyObject(data)) {
@@ -136,15 +136,15 @@ var Hash = new function() {
 		}
 		return data
 	},
-	this._simpleOp =  function(op, data, tokens, values) {
+	this._simpleOp =  function(op, data, tokens, value) {
 		var hold = data
 		for (var i = 0; i < tokens.length; i++) {
 			if (op === 'insert') {
-				if (i === tokens.length -1) {
-					hold[tokens[i]] = values
+				if (i === tokens.length-1) {
+					hold[tokens[i]] = value
 					return data
 				}
-				if (typeof hold[tokens[i]] === 'undefined') {
+				if (typeof hold[tokens[i]] !== 'object') {
 					hold[tokens[i]] = {}
 				}
 				hold = hold[tokens[i]]
