@@ -1,6 +1,5 @@
 // Hash
-;var Hash = new function() {
-	var Hash = {
+;var Hash = {
 		extract: function(data, path) {
 			if(!new RegExp('[{\[]').test(path))
 				return Hash.get(data, path) || []
