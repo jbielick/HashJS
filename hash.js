@@ -113,7 +113,7 @@
 			return data
 		},
 		remove: function(data, path) {
-			var tokens = Hash._tokenize(path), match, token, nextPath
+			var tokens = Hash._tokenize(path), match, token, nextPath, removed
 			if (path.indexOf('{') === -1) {
 				return Hash._simpleOp('remove', data, tokens)
 			}
@@ -121,15 +121,20 @@
 			nextPath = tokens.join('.')
 			for (var key in data) if (data.hasOwnProperty(key)) {
 				match = Hash._matchToken(key, token)
-				if (match && typeof data[key] === 'object')
+				if (match && typeof data[key] === 'object') {
 					data[key] = Hash.remove(data[key], nextPath)
-				else if (match)
-					delete data[key]
+				} else if (match) {
+					if (Array.isArray(data)) {
+						data.splice(key,1)
+					} else {
+						delete data[key]
+					}
+				}
 			}
 			return data
 		},
 		_simpleOp: function(op, data, tokens, value) {
-			var hold = data
+			var hold = data, removed
 			for (var i = 0; i < tokens.length; i++) {
 				if (op === 'insert') {
 					if (i === tokens.length-1) {
@@ -137,12 +142,22 @@
 						return data
 					}
 					if (typeof hold[tokens[i]] !== 'object') {
-						hold[tokens[i]] = {}
+						if (!isNaN(Number(tokens[i+1]))) {
+							hold[tokens[i]] = []
+						} else {
+							hold[tokens[i]] = {}
+						}
 					}
 					hold = hold[tokens[i]]
 				} else if (op === 'remove') {
-					if (i === tokens.length -1) {
-						delete hold[tokens[i]]
+					if (i === tokens.length-1) {
+						removed = Hash.insert({}, 'item', hold[tokens[i]])
+						if (Array.isArray(hold)) {
+							hold.splice(tokens[i],1)
+						} else {
+							delete hold[tokens[i]]
+						}
+						data = removed.item
 						return data
 					}
 					if (typeof hold[tokens[i]] === 'undefined') {
