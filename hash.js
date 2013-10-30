@@ -1,5 +1,7 @@
-// Hash
-;var Hash = {
+// Hash.js 
+// https://github.com/jbielick/HashJS
+var H = new function() {
+	var Hash = {
 		extract: function(data, path) {
 			if(!new RegExp('[{\[]').test(path))
 				return Hash.get(data, path) || []
@@ -17,6 +19,41 @@
 				context.set = got
 			}
 			return context.set
+		},
+		parseModel: function(el, returnInputs) {
+			var model = {},
+				$el = $(el),
+				_flattenedDOM = {},
+				_flattened = {},
+				inputs = $el.is('form') ? $el.prop('elements') : $el.find('input, textarea, select'),
+				obj, obj2, name, idxd
+
+			for (var i = 0; i < inputs.length; i++) {
+				name = inputs[i].getAttribute('name')
+				if (name && inputs[i].type !== 'submit') {
+					if (!inputs[name].tagName && inputs[name].length > 1)
+						name = name.replace(/\[.{0}\]/g, function() {return '['+Array.prototype.slice.apply(inputs[name]).indexOf(inputs[i])+']'})
+					if(inputs[i].type === 'file' && inputs[i].value !== '')
+						r.files.push(inputs[i])
+					_flattenedDOM[name] = inputs[i]
+					_flattened[name] = $(inputs[i]).val()
+				}
+			}
+			if (returnInputs) {
+				model.get = function(path) {
+					var input =  Hash.get(model.controls, path)
+					return $(input).val()
+				}
+				model.set = function(path, value) {
+					var input = Hash.get(model.controls, path)
+					return $(input).val(value)
+				}
+				model.controls = Hash.expand(_flattenedDOM)
+				model.data = Hash.expand(_flattened)
+			} else {
+				model = Hash.expand(_flattened)
+			}
+			return model
 		},
 		_matchToken: function(key, token) {
 			if (token === '{n}')
@@ -174,7 +211,9 @@
 			}
 		},
 		flatten: function() {
-			return Function.callWithCopy.apply(Hash._flatten, arguments)
+			var args = Array.prototype.slice.call(arguments)
+			args[0] = Hash.merge(true, {}, args[0])
+			return Hash._flatten(this, args)
 		},
 		_flatten: function(data, separator, limit) {
 			var path = '', stack = [], out = {}, key, el, curr,
