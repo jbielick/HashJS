@@ -12,7 +12,9 @@ Use as a front-end tool:
     git clone git@github.com:jbielick/HashJS.git
 
 and include hash.min.js on your page.
----------------
+
+or
+
 Install as a node module with npm:
 
     npm install hashjs
