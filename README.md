@@ -27,7 +27,7 @@ We're probably looking at a `User` model that has many `Post` which hasBelongsTo
 Here's where the user would input the name of new `Tag`s to associate with their `Post`:
 
     <input id="UserPostTag0Name" name="data[User][Post][Tag][][name]" value="Fishing" type="text">
-    <input id="UserPostTag0Name" name="data[User][Post][Tag][][name]" value="Dislikes" type="text">
+    <input id="UserPostTag1Name" name="data[User][Post][Tag][][name]" value="Dislikes" type="text">
 
 Javascrit doesn't understand the form-encoded syntax for representing multidimensional input structures.
 The previous input element would yield a structure like the following in PHP or the like:
@@ -52,15 +52,31 @@ That's really helpful. Thanks, PHP.
 Want this structure in javascript?
 
 ```javascript
-var input = document.getElementById('UserPostCategory0Name');
-var name = input.getAttribute('name');
+var input0 = document.getElementById('UserPostTag0Name');
+var input1 = document.getElementById('UserPostTag1Name');
+var flatPathsAndKeys = {};
 
-// expand this
+flatPathsAndKeys[input0.name] = input0.value;
+flatPathsAndKeys[input1.name] = input1.value;
 
-H.expand(name, input.value);
+// H.expand() will create a multi-dimensional object out of path: value pairs.
+// flatPathsAndKeys looks like: 
+// 
+// {
+// 	'data[User][Post][Tag][][name]': 'Fishing',
+// 	'data[User][Post][Tag][][name]': 'Dislikes',
+// }
+//
+// Alternatively: use the dot notation syntax (preferred)
+// {
+// 	'User.Post.Tag.0.name': 'Fishing',
+// 	'User.Post.Tag.1.name': 'Dislikes',
+// }
+//
 
-// looks like: H.expand('data[User][Post][Tag][][name]', 99)
-// and the result:
+H.expand(flatPathsAndKeys);
+
+// returns:
 
 {
 	User: {
