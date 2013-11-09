@@ -21,7 +21,7 @@ Install as a node module with npm:
 	 
 ####Examples:
 =========================
-Let's say you have an input element on your page like so:
+Let's say you have input elements on your page like so:
 
     <input id="UserPostTag0Name" name="data[User][Post][Tag][][name]" value="Fishing" type="text">
     <input id="UserPostTag1Name" name="data[User][Post][Tag][][name]" value="Dislikes" type="text">
