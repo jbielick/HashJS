@@ -23,11 +23,11 @@ Install as a node module with npm:
 =========================
 Let's say you have an input element on your page like so:
 
-We're probably looking at a `User` model that has many `Post` which hasBelongsToMany `Tag`s.
-Here's where the user would input the name of new `Tag`s to associate with their `Post`:
-
     <input id="UserPostTag0Name" name="data[User][Post][Tag][][name]" value="Fishing" type="text">
     <input id="UserPostTag1Name" name="data[User][Post][Tag][][name]" value="Dislikes" type="text">
+
+We're probably looking at a `User` model that has many `Post` which hasBelongsToMany `Tag`s.
+Here's where the user would input the name of new `Tag`s to associate with their `Post`:
 
 Javascrit doesn't understand the form-encoded syntax for representing multidimensional input structures.
 The previous input element would yield a structure like the following in PHP or the like:
