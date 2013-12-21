@@ -302,3 +302,4 @@ module.exports = new function() {
 	}
 	return Hash
 }()
+if (!Array.prototype.isArray) {Array.isArray = function (vArg) {return Object.prototype.toString.call(vArg) === "[object Array]"}}

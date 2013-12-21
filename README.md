@@ -1,7 +1,7 @@
 #hashjs
 
 ====================
-A CakePHP class Hash-like javascript object traversal, manipulation and extraction tool.
+A CakePHP Hash Class-like javascript object traversal, manipulation and extraction module.
 
 This is not xpath for javascript. It's simple, focused on combining, extracting, inserting, and translating data paths in javascript objects.
 
