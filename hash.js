@@ -1,305 +1,313 @@
-module.exports = new function() {
-	var Hash = {
-		/* 
-		 * Extracts value(s) from the given path; a token-friendly form of Hash.get(). (non-destructive)
-		 * 
-		 * @param {object} the object to extract from.
-		 * @param {string} the path to the value to be extracted.
-		 * @return {mixed} if path includes token ({n}, {s}), return will be array, otherwise same type as extracted value.
-		 */
-		extract: function(data, path) {
-			if(!new RegExp('[{\[]').test(path))
-				return Hash.get(data, path) || []
-			var tokens = Hash._tokenize(path),
-				got = [], out = [], context = {set: [data]}
-			
-			for (var i = 0; i < tokens.length; i++) {
-				got = []
-				for (var z = 0; z < context.set.length; z++) {
-					for (var key in context.set[z]) if (context.set[z].hasOwnProperty(key)) {
-						if (Hash._matchToken(key, tokens[i]))
-							got.push(context.set[z][key])
-					}
-				}
-				context.set = got
-			}
-			return context.set
-		},
-		/* 
-		 * checks if given key variable type matches token type
-		 * 
-		 * @param {string} object key
-		 * @param {string} the path token.
-		 * @return {boolean} match
-		 */
-		_matchToken: function(key, token) {
-			if (token === '{n}')
-				return (Number(key) % 1 === 0)
-			if (token === '{s}')
-				return typeof key === 'string'
-			if (Number(token) % 1 === 0)
-				return (key == token)
-			return (key === token)
-		},
-		/* 
-		 * 
-		 * 
-		 */
-		_matches: function(val, condition) {
-			
-		},
-		/* 
-		 * expands a hash of path: value pairs into a multidimensional hash.
-		 * 
-		 * @param {object} hash of path: value pairs
-		 * @return {object} expanded object.
-		 */
-		expand: function(data) {
-			var path, tokens, parent, child, out = {}, cleanPath, val, curr
-				
-			if(!data.length)
-				data = [data]
-			
-			for (var i = 0; i < data.length; i++) {
-				curr = data[i]
-				for (var path in curr) if (curr.hasOwnProperty(path)) {
-					tokens = Hash._tokenize(path).reverse()
-					val = typeof curr[path] === 'function' ? curr[path]() : curr[path]
-					if (tokens[0] === '{n}' || !isNaN(Number(tokens[0])) ) {
-						child = []
-						child[tokens[0]] = val
-					} else {
-						child = {}
-						child[tokens[0]] = val
-					}
-					tokens.shift()
-					for (var z = 0; z < tokens.length; z++) {
-						if (tokens[z] === '{n}' || !isNaN(Number(tokens[z])))
-							parent = [], parent[tokens[z]] = child
-						else
-							parent = {}, parent[tokens[z]] = child
-						child = parent
-					}
-					out = Hash.merge(false, out, child)
-				}
-			}
-			return out
-		},
-		/* 
-		 * gets a value at a given path in the provided object
-		 * 
-		 * @param {object} object/array of data
-		 * @param {string} path to the object ( no tokens )
-		 * @return {mixed} the value (no casting) or null if path is invalid.
-		 */
-		get: function(data, path) {
-			var out = data,
-				tokens = Hash._tokenize(path)
-			for (var i = 0; i < tokens.length; i++) {
-				if (typeof out === 'object' && typeof out[tokens[i]] !== 'undefined')
-					out = out[tokens[i]]
-				else
-					return null
-			}
-			return out
-		},
-		/* 
-		 * otherwise known as 'extend'
-		 * 
-		 * @param [optional {boolean} merge deeply if true]
-		 * @param {object} accepts any number of object arguments to merge. values are written from right to left.
-		 * @return {object} merged object.
-		 */
-		merge: function() {
-			var obs = Array.prototype.slice.call(arguments), out, dest = false
-			
-			if (typeof arguments[0] === 'boolean')
-				dest = obs.shift()
-				
-			out = obs.shift()
-			for (var i = 0; i < obs.length; i++) {
-				for (var key in obs[i]) if (obs[i].hasOwnProperty(key)) {
-					if (typeof obs[i][key] === 'object' && out[key] && !obs[i][key].nodeType)
-						out[key] = Hash.merge(dest, out[key], obs[i][key])
-					else
-						out[key] = obs[i][key]
-				}
-			}
-			return out
-		},
-		/* 
-		 * inserts a value at a given path into the given object. accepts tokens ({n}, {s})
-		 * 
-		 * @param {object} an object (empty or full)
-		 * @param {string} path to the value being inserted
-		 * @return {object} original object with inserted data
-		 */
-		insert: function(data, path, values) {
-			var tokens = Hash._tokenize(path), token, nextPath, expand = {}
-			if (path.indexOf('{') === -1 && path.indexOf('[]') === -1) {
-				return Hash._simpleOp('insert', data, tokens, values)
-			}
-			if (Hash.keys(data).length) {
-				token = tokens.shift()
-				nextPath = tokens.join('.')
-				for (var key in data) if (data.hasOwnProperty(key)) {
-					if (Hash._matchToken(key, token)) {
-						if(!nextPath)
-							data[key] = values
-						else
-							data[key] = Hash.insert(data[key], nextPath, values)
-					}
-				}
-			} else {
-				expand[path] = values
-				return Hash.expand([expand])
-			}
-			return data
-		},
-		/* 
-		 * Removes a key: value pair from the given object.
-		 * TODO: return the removed key: value pair(s)
-		 * 
-		 * @param {object} hash of data
-		 * @param {string} path to the key: value pair to delete including the key.
-		 * @return {object} the original object less removals
-		 */
-		remove: function(data, path) {
-			var tokens = Hash._tokenize(path), match, token, nextPath, removed
-			if (path.indexOf('{') === -1) {
-				return Hash._simpleOp('remove', data, tokens)
-			}
-			token = tokens.shift()
-			nextPath = tokens.join('.')
-			for (var key in data) if (data.hasOwnProperty(key)) {
-				match = Hash._matchToken(key, token)
-				if (match && typeof data[key] === 'object') {
-					data[key] = Hash.remove(data[key], nextPath)
-				} else if (match) {
-					if (Array.isArray(data)) {
-						data.splice(key,1)
-					} else {
-						delete data[key]
-					}
-				}
-			}
-			return data
-		},
-		/* 
-		 * performs a non-token insert or remove on an object
-		 * 
-		 * @param {string} operation: 'insert' || 'remove'
-		 * @param {object} hash of data
-		 * @param {object} array of tokens from the path when split
-		 * @param {mixed} [optional value to insert]
-		 */
-		_simpleOp: function(op, data, tokens, value) {
-			var hold = data, removed
-			for (var i = 0; i < tokens.length; i++) {
-				if (op === 'insert') {
-					if (i === tokens.length-1) {
-						hold[tokens[i]] = value
-						return data
-					}
-					if (typeof hold[tokens[i]] !== 'object') {
-						if (!isNaN(Number(tokens[i+1]))) {
-							hold[tokens[i]] = []
-						} else {
-							hold[tokens[i]] = {}
-						}
-					}
-					hold = hold[tokens[i]]
-				} else if (op === 'remove') {
-					if (i === tokens.length-1) {
-						removed = Hash.insert({}, 'item', hold[tokens[i]])
-						if (Array.isArray(hold)) {
-							hold.splice(tokens[i],1)
-						} else {
-							delete hold[tokens[i]]
-						}
-						data = removed.item
-						return data
-					}
-					if (typeof hold[tokens[i]] === 'undefined') {
-						return data
-					}
-					hold = hold[tokens[i]]
-				}
-			}
-		},
-		/* 
-		 * turns a path string into an array of tokens. Also translates HTML input name paths into path array.
-		 * 
-		 * @param {string} path in dot notation or HTML input name bracket notation.
-		 * ex: 'User.Profile.first_name' or 'data[User][Profile][first_name]' or 'User[Profile][first_name]'
-		 * @return {object} array of path tokens
-		 */
-		_tokenize: function(path) {
-			if (path.indexOf('data[') === -1) {
-				return path.split('.')
-			} else {
-				return path.replace(/^data/, '').replace(/^\[|\]$/g, '').split('][').map(function(v) {return v === '' ? '{n}' : v })
-			}
-		},
-		/* 
-		 * Flattens a multi-dimensional object/array into path: value pairs.
-		 * 
-		 * @param {object} array or mixed object of data
-		 * @param {string} path delimiter; default is '.'
-		 * @param {int} recursion depth limit for flattening
-		 * @return {object} a new object of path: value pairs.
-		 */
-		flatten: function(data, separator, depth) {
-			return Hash._flatten(Hash.merge(true, {}, data), separator, depth);
-		},
-		_flatten: function(data, separator, limit) {
-			var path = '', stack = [], out = {}, key, el, curr,
-				separator = separator || '.', limit = limit || false, wrap = separator === ']['
-			while (Hash.keys(data).length || (Array.isArray(data) && data.length) ) {
-				if (Array.isArray(data)) {
-					key = data.length-1
-					el = data.pop()
-				}
-				else {
-					key = Hash.keys(data)[0]
-					el = data[key]
-					delete data[key]
-				}
-				
-				if (path.split(separator).length === limit || typeof el !== 'object' || el == null || el.nodeType) {
-					if(wrap)
-						out['data['+path+key+']'] = el || ''
-					else
-						out[path + key] = el || ''
-				}
-				else {
-					if (Hash.keys(data).length > 0) {
-						stack.push([data,path])
-					}
-					data = el
-					path += key + separator
-				}
-				if (Hash.keys(data).length === 0 && stack.length) {
-					curr = stack.pop()
-					data = curr[0], path = curr[1]
-				}
-			}
-			return out
-		},
-		/* 
-		 * Object.keys() polyfill
-		 */
-		keys: function(obj) {
-			var keys = []
-			if (Array.isArray(obj)) {
-				obj.map(function(v, i) {keys.push(i)})
-			} else {
-				for (var key in obj) if (obj.hasOwnProperty(key))
-					keys.push(key)
-			}
-			return keys
-		}
-	}
-	return Hash
-}()
-if (!Array.prototype.isArray) {Array.isArray = function (vArg) {return Object.prototype.toString.call(vArg) === "[object Array]"}}
+// Generated by CoffeeScript 1.6.3
+var __hasProp = {}.hasOwnProperty,
+  __slice = [].slice;
+
+(function(factory) {
+  if (typeof define === 'function' && define.amd) {
+    return define([], factory);
+  } else {
+    return window.Hash = factory();
+  }
+})(function() {
+  var Hash;
+  return Hash = (function() {
+    function Hash() {}
+
+    Hash.prototype.remove = function(data, path) {
+      var key, nextPath, token, tokens, value;
+      tokens = this.tokenize(path);
+      if (path.indexOf('{') === -1) {
+        return this.simpleOp('remove', data, path);
+      }
+      token = tokens.shift();
+      nextPath = tokens.join('.');
+      for (key in data) {
+        if (!__hasProp.call(data, key)) continue;
+        value = data[key];
+        if (this.matchToken(key, token)) {
+          if (value && (this.isObject(value) || value.constructor === Array) && nextPath) {
+            if (nextPath.split('.').shift() === '{n}' && value.constructor === Array) {
+              delete data[key];
+            } else {
+              value = this.remove(value, nextPath);
+            }
+          } else if (data.constructor === Array) {
+            data.splice(key, 1);
+          } else {
+            delete data[key];
+          }
+        }
+      }
+      return data;
+    };
+
+    Hash.prototype.insert = function(data, path, insertValue) {
+      var expand, key, nextPath, token, tokens, value;
+      tokens = this.tokenize(path);
+      expand = {};
+      if (path.indexOf('{') === -1 && path.indexOf('[]') === -1) {
+        return this.simpleOp('insert', data, path, insertValue);
+      }
+      if (this.keys(data).length || data.length > 0) {
+        token = tokens.shift();
+        nextPath = tokens.join('.');
+        for (key in data) {
+          if (!__hasProp.call(data, key)) continue;
+          value = data[key];
+          if (this.matchToken(key, token)) {
+            if (nextPath === '') {
+              data[key] = insertValue;
+            } else {
+              data[key] = this.insert(data[key], nextPath, insertValue);
+            }
+          }
+        }
+      } else {
+        expand[path] = insertValue;
+        return this.expand(expand);
+      }
+      return data;
+    };
+
+    Hash.prototype.simpleOp = function(operation, data, path, value) {
+      var hold, removed, token, tokens, _i, _len;
+      tokens = this.tokenize(path);
+      hold = data;
+      for (_i = 0, _len = tokens.length; _i < _len; _i++) {
+        token = tokens[_i];
+        if (operation === 'insert') {
+          if (_i === tokens.length - 1) {
+            hold[token] = value;
+            return data;
+          }
+          if (!this.isObject(hold[token]) && !hold[token].constructor === Array) {
+            if (!isNaN(parseInt(tokens[_i + 1]))) {
+              hold[token] = [];
+            } else {
+              hold[token] = {};
+            }
+          }
+          hold = hold[token];
+        } else if (operation === 'remove') {
+          if (_i === tokens.length - 1) {
+            (removed = {}).item = hold[token];
+            if (hold.constructor === Array) {
+              Array.prototype.splice.call(hold, token, 1);
+            } else {
+              delete hold[token];
+            }
+            data = removed.item;
+            return data;
+          }
+          if (hold[token] == null) {
+            return data;
+          }
+          hold = hold[token];
+        }
+      }
+    };
+
+    Hash.prototype.get = function(data, path) {
+      var out, token, tokens, _i, _len;
+      out = data;
+      tokens = this.tokenize(path);
+      for (_i = 0, _len = tokens.length; _i < _len; _i++) {
+        token = tokens[_i];
+        if (this.isObject(out) || out.constructor === Array && (out[token] != null)) {
+          out = out[token];
+        } else {
+          return null;
+        }
+      }
+      return out;
+    };
+
+    Hash.prototype.extract = function(data, path) {
+      var context, got, item, key, out, token, tokens, value, _i, _j, _len, _len1, _ref;
+      if (!new RegExp('[{\[]').test(path)) {
+        this.get(data, path) || [];
+      }
+      tokens = this.tokenize(path);
+      out = [];
+      context = {
+        set: [data]
+      };
+      for (_i = 0, _len = tokens.length; _i < _len; _i++) {
+        token = tokens[_i];
+        got = [];
+        _ref = context.set;
+        for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+          item = _ref[_j];
+          for (key in item) {
+            if (!__hasProp.call(item, key)) continue;
+            value = item[key];
+            if (this.matchToken(key, token)) {
+              got.push(value);
+            }
+          }
+        }
+        context.set = got;
+      }
+      return got;
+    };
+
+    Hash.prototype.expand = function(flat) {
+      var child, out, parent, path, set, token, tokens, value, _i, _j, _len, _len1;
+      out = {};
+      if (flat.constructor !== Array) {
+        flat = [flat];
+      }
+      for (_i = 0, _len = flat.length; _i < _len; _i++) {
+        set = flat[_i];
+        for (path in set) {
+          if (!__hasProp.call(set, path)) continue;
+          value = set[path];
+          tokens = this.tokenize(path).reverse();
+          value = set[path];
+          if (tokens[0] === '{n}' || !isNaN(Number(tokens[0]))) {
+            (child = [])[tokens[0]] = value;
+          } else {
+            (child = {})[tokens[0]] = value;
+          }
+          tokens.shift();
+          for (_j = 0, _len1 = tokens.length; _j < _len1; _j++) {
+            token = tokens[_j];
+            if (!isNaN(Number(token))) {
+              (parent = [])[parseInt(token, 10)] = child;
+            } else {
+              (parent = {})[token] = child;
+            }
+            child = parent;
+          }
+          this.merge(out, child);
+        }
+      }
+      return out;
+    };
+
+    Hash.prototype.flatten = function(data, separator, depthLimit) {
+      var curr, el, key, out, path, stack;
+      if (separator == null) {
+        separator = '.';
+      }
+      if (depthLimit == null) {
+        depthLimit = false;
+      }
+      data = this.merge({}, data);
+      path = '';
+      stack = [];
+      while (this.keys(data).length || data.length) {
+        if (this.isArray(data)) {
+          key = data.length - 1;
+          el = data.pop();
+        } else {
+          key = this.keys(data)[0];
+          el = data[key];
+          delete data[key];
+        }
+        if (path.split(separator).length === depthLimit || typeof el !== 'object' || el.nodeType) {
+          (out = {})[path + key] = el;
+        } else {
+          if (this.keys(data).length > 0) {
+            (stack = stack || []).push([data, path]);
+          }
+          data = el;
+          path += key + separator;
+        }
+        if (this.keys(data).length === 0 && stack.length > 0) {
+          curr = stack.pop();
+          data = curr[0], path = curr[1];
+        }
+      }
+      return out;
+    };
+
+    Hash.prototype.merge = function() {
+      var key, object, objects, out, value, _i, _len;
+      objects = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      out = objects.shift();
+      for (_i = 0, _len = objects.length; _i < _len; _i++) {
+        object = objects[_i];
+        for (key in object) {
+          if (!__hasProp.call(object, key)) continue;
+          value = object[key];
+          if (out[key] && value && (this.isObject(out[key]) && this.isObject(value) || out[key].constructor === Array)) {
+            out[key] = this.merge(out[key], value);
+          } else {
+            out[key] = value;
+          }
+        }
+      }
+      return out;
+    };
+
+    Hash.prototype.matchToken = function(key, token) {
+      if (token === '{n}') {
+        return parseInt(key, 10) % 1 === 0;
+      }
+      if (token === '{s}') {
+        return typeof key === 'string';
+      }
+      if (parseInt(token, 10) % 1 === 0) {
+        return parseInt(key, 10) === parseInt(token, 10);
+      }
+      return key === token;
+    };
+
+    Hash.prototype.dotToBracketNotation = function(path, reverse) {
+      if (reverse == null) {
+        reverse = false;
+      }
+      if (!path) {
+        throw new TypeError('Not Enough Arguments');
+      }
+      if (reverse) {
+        return path.replace(/\]/g, '').split('[').join('.');
+      } else {
+        return path.replace(/([\w]+)\.?/g, '[$1]').replace(/^\[(\w+)\]/, '$1');
+      }
+    };
+
+    Hash.prototype.tokenize = function(path) {
+      if (path.indexOf('[') === -1) {
+        return path.split('.');
+      } else {
+        return this.map(path.split('['), function(v) {
+          v = v.replace(/\]/, '');
+          if (v === '') {
+            return '{n}';
+          } else {
+            return v;
+          }
+        });
+      }
+    };
+
+    Hash.prototype.isObject = function(item) {
+      if (typeof item === 'object' && item.toString() === '[object Object]' && item.constructor === Object) {
+        return true;
+      } else {
+        return false;
+      }
+    };
+
+    Hash.prototype.keys = function(object) {
+      var key, keys;
+      keys = [];
+      if (this.isObject(object)) {
+        for (key in object) {
+          if (!__hasProp.call(object, key)) continue;
+          keys.push(key);
+        }
+        return keys;
+      } else {
+        return {};
+      }
+    };
+
+    Hash = new Hash();
+
+    return Hash;
+
+  })();
+});
