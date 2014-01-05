@@ -1,12 +1,10 @@
 #hashjs
 ====================
-
 A library of functions for javascript object traversal, manipulation and extraction. Safely access, extract, rearrange and transform deeply nested objects and structures.
 
 This is not xpath for javascript. It's simple, focused on combining, extracting, inserting, and translating data paths in javascript objects.
 
 ####Where to start
-=========================
 Use as a front-end tool:
 
     git clone git@github.com:jbielick/HashJS.git
@@ -20,7 +18,6 @@ Install as a node module with npm:
     npm install hashjs
 
 ####Examples:
-=========================
 Let's say you have input elements on your page like so:
 
     <input id="UserPostTag0Name" name="data[User][Post][Tag][][name]" value="Fishing" type="text">

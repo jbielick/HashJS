@@ -6,7 +6,6 @@
 		window.Hash = factory()
 )(() ->
 	class Hash
-
 		remove: (data, path) ->
 			tokens = @tokenize path
 			if path.indexOf('{') is -1
@@ -24,7 +23,6 @@
 						data.splice key, 1
 					else
 						delete data[key]
-
 			data
 		insert: (data, path, insertValue) ->
 			tokens = @tokenize path
