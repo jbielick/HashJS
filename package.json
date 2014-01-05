@@ -1,1 +1,33 @@
-{}
+{
+  "name": "hashjs",
+  "version": "1.0.0",
+  "author": {
+    "name": "Josh Bielick",
+    "email": "jbielick@gmail.com",
+    "url": "http://github.com/jbielick"
+  },
+  "description": "A library of functions for safely accessing, maniuplating, transforming, traversing and extracting from javascript objects",
+  "main": "./hash",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jbielick/HashJS.git"
+  },
+  "keywords": [
+    "json",
+    "xpath",
+    "javascript"
+  ],
+  "dependencies": {},
+  "bugs": {
+    "url": "https://github.com/jbielick/HashJS/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/jbielick/HashJS/master/LICENSE"
+    }
+  ],
+  "readmeFilename": "README.md",
+  "_id": "hashjs@0.0.7",
+  "_from": "hashjs@"
+}
