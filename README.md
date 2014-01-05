@@ -1,24 +1,24 @@
 #hashjs
-
 ====================
-A CakePHP Hash Class-like javascript object traversal, manipulation and extraction module.
+
+A library of functions for javascript object traversal, manipulation and extraction. Safely access, extract, rearrange and transform deeply nested objects and structures.
 
 This is not xpath for javascript. It's simple, focused on combining, extracting, inserting, and translating data paths in javascript objects.
 
-####Install
+####Where to start
 =========================
 Use as a front-end tool:
 
     git clone git@github.com:jbielick/HashJS.git
 
-and include hash.min.js on your page.
+and include hash.min.js or hash.js on your page.
 
 or
 
 Install as a node module with npm:
 
     npm install hashjs
-	 
+
 ####Examples:
 =========================
 Let's say you have input elements on your page like so:
