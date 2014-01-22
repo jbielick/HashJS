@@ -1,4 +1,3 @@
-
 ((factory) -> 
 	if typeof define is 'function' and define.amd
 		define [], factory
@@ -128,7 +127,7 @@
 					key = @.keys(data)[0]
 					el = data[key]
 					delete data[key]
-				if path.split(separator).length is depthLimit or typeof el isnt 'object' or not el? or (el and el.nodeType)
+				if not el? or path.split(separator).length is depthLimit or typeof el isnt 'object' or el.nodeType or (typeof el is 'object' and (el.constructor is Date or el.constructor is RegExp or el.constructor is Function)) or el.constructor isnt Object
 					out[path + key] = el
 				else
 					if @.keys(data).length > 0
@@ -180,9 +179,10 @@
 			if @isObject object
 				for own key of object
 					keys.push key
-				keys
-			else
-				return {}
+			else if object.constructor is Array
+				for key in object
+					keys.push _i
+			keys
 
 		Hash = new Hash()
 )

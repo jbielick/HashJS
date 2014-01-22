@@ -8,7 +8,7 @@
 <body>
 <div id="qunit"></div>
 <div id="qunit-fixture"></div>
-<script type="text/javascript" src="../hash.js"></script>
+<script type="text/javascript" src="../lib/hash.js"></script>
 <script type="text/javascript" src="./qunitjs/qunit/qunit.js"></script>
 <script>
 
@@ -205,6 +205,66 @@
 					}
 				}]
 			}, 'should have removed an object from the "Three" array of objects, path: One.1.Two.Three.{n}')
+	});
+
+	module('flatten');
+
+	test('deep object', function() {
+
+		var date = new Date(),
+			div = document.createElement('div'),
+			regex = new RegExp();
+
+		var deepObject = {
+			One: {
+				Two: {
+					val: 'string',
+					Three: {
+						Four: 1,
+						Five: 2
+					}
+				}
+			},
+			Two: {
+				Two: {
+					Three: {
+						val: date
+					},
+					Four: {
+						val: regex,
+						val2: div
+					}
+				}
+			}
+		};
+
+		var flattened = Hash.flatten(deepObject);
+
+		deepEqual(flattened, {
+			'One.Two.val'			: 'string',
+			'One.Two.Three.Four'	: 1,
+			'One.Two.Three.Five'	: 2,
+			'Two.Two.Three.val'		: date,
+			'Two.Two.Four.val'		: regex,
+			'Two.Two.Four.val2'		: div
+		}, 'flatten a deep object with native javascript objects inside');
+	});
+
+	test('simple flat', function() {
+
+		var shallowObject = {
+			one: 'val',
+			two: 'val',
+			three: 'val'
+		};
+
+		var flattened = Hash.flatten(shallowObject);
+
+		deepEqual(flattened, {
+			one: 'val',
+			two: 'val',
+			three: 'val'
+		}, 'flatten a shallow object');
 	});
 
 
