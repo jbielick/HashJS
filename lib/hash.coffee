@@ -1,7 +1,7 @@
 ((factory, root) ->
 	if typeof define is 'function' and define.amd
 		define [], factory
-	else if typeof module is not 'undefined' && module.exports
+	else if module? and module.exports
 		module.exports = factory()
 	else
 		root.Hash = factory()

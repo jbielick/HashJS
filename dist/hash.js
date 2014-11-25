@@ -6,7 +6,7 @@
   (function(factory, root) {
     if (typeof define === 'function' && define.amd) {
       return define([], factory);
-    } else if (typeof module === !'undefined' && module.exports) {
+    } else if ((typeof module !== "undefined" && module !== null) && module.exports) {
       return module.exports = factory();
     } else {
       return root.Hash = factory();
