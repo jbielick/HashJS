@@ -8,7 +8,7 @@
 <body>
 <div id="qunit"></div>
 <div id="qunit-fixture"></div>
-<script type="text/javascript" src="../lib/hash.js"></script>
+<script type="text/javascript" src="../dist/hash.js"></script>
 <script type="text/javascript" src="./qunitjs/qunit/qunit.js"></script>
 <script>
 
@@ -78,7 +78,7 @@
 		var data = getObject(1);
 
 		deepEqual(Hash.extract(data, 'One.1.Two.Three.{n}.val'), [
-			'third', 
+			'third',
 			'third'
 		], 'Gets an array of "third" and "third", the values at the path One.1.Two.Three.{any numberic key}.val');
 
