@@ -1,13 +1,13 @@
 {
   "name": "hashjs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": {
     "name": "Josh Bielick",
     "email": "jbielick@gmail.com",
     "url": "http://github.com/jbielick"
   },
   "description": "A library of functions for safely accessing, maniuplating, transforming, traversing and extracting from javascript objects",
-  "main": "./hash",
+  "main": "./index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:jbielick/HashJS.git"
