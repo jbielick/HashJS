@@ -28,13 +28,13 @@
           if (!__hasProp.call(data, key)) continue;
           value = data[key];
           if (this.matchToken(key, token)) {
-            if (value && (this.isObject(value) || value.constructor === Array) && nextPath) {
-              if (nextPath.split('.').shift() === '{n}' && value.constructor === Array) {
+            if (value && (this.isObject(value) || this.isArray(value)) && nextPath) {
+              if (nextPath.split('.').shift() === '{n}' && this.isArray(value)) {
                 delete data[key];
               } else {
                 value = this.remove(value, nextPath);
               }
-            } else if (data.constructor === Array) {
+            } else if (this.isArray(data)) {
               data.splice(key, 1);
             } else {
               delete data[key];
@@ -83,7 +83,7 @@
               hold[token] = value;
               return data;
             }
-            if (!this.isObject(hold[token]) && !hold[token].constructor === Array) {
+            if (!this.isObject(hold[token]) && !this.isArray(hold[token])) {
               if (!isNaN(parseInt(tokens[_i + 1]))) {
                 hold[token] = [];
               } else {
@@ -94,7 +94,7 @@
           } else if (operation === 'remove') {
             if (_i === tokens.length - 1) {
               (removed = {}).item = hold[token];
-              if (hold.constructor === Array) {
+              if (this.isArray(hold)) {
                 Array.prototype.splice.call(hold, token, 1);
               } else {
                 delete hold[token];
@@ -116,7 +116,7 @@
         tokens = this.tokenize(path);
         for (_i = 0, _len = tokens.length; _i < _len; _i++) {
           token = tokens[_i];
-          if (this.isObject(out) || out.constructor === Array && (out[token] != null)) {
+          if (this.isObject(out) || (out && this.isArray(out)) && (out[token] != null)) {
             out = out[token];
           } else {
             return null;
@@ -201,7 +201,7 @@
         stack = [];
         out = {};
         while ((this.keys(data).length)) {
-          if (data.constructor === Array && data.length > 0) {
+          if (this.isArray(data) && data.length > 0) {
             key = data.length - 1;
             el = data.pop();
           } else {
@@ -235,7 +235,7 @@
           for (key in object) {
             if (!__hasProp.call(object, key)) continue;
             value = object[key];
-            if (out[key] && value && (this.isObject(out[key]) && this.isObject(value) || out[key].constructor === Array)) {
+            if (out[key] && value && (this.isObject(out[key]) && this.isObject(value) || this.isArray(out[key]))) {
               out[key] = this.merge(out[key], value);
             } else {
               out[key] = value;
@@ -288,11 +288,11 @@
       };
 
       Hash.prototype.isObject = function(item) {
-        if (typeof item === 'object' && item.toString() === '[object Object]' && item.constructor === Object) {
-          return true;
-        } else {
-          return false;
-        }
+        return typeof item === 'object' && Object.prototype.toString.call(item) === '[object Object]';
+      };
+
+      Hash.prototype.isArray = function(item) {
+        return typeof item === 'object' && typeof item.length === 'number' && Object.prototype.toString.call(item) === '[object Array]';
       };
 
       Hash.prototype.keys = function(object) {
@@ -303,7 +303,7 @@
             if (!__hasProp.call(object, key)) continue;
             keys.push(key);
           }
-        } else if (object.constructor === Array) {
+        } else if (this.isArray(object)) {
           for (_i = 0, _len = object.length; _i < _len; _i++) {
             key = object[_i];
             keys.push(_i);

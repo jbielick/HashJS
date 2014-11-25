@@ -15,12 +15,12 @@
 			nextPath = tokens.join '.'
 			for own key, value of data
 				if @matchToken key, token
-					if value and (@isObject(value) or value.constructor is Array) && nextPath
-						if nextPath.split('.').shift() is '{n}' and value.constructor is Array
+					if value and (@isObject(value) or @isArray(value)) && nextPath
+						if nextPath.split('.').shift() is '{n}' and @isArray(value)
 							delete data[key]
 						else
 							value = @remove value, nextPath
-					else if data.constructor is Array
+					else if @isArray(data)
 						data.splice key, 1
 					else
 						delete data[key]
@@ -51,7 +51,7 @@
 					if _i is tokens.length - 1
 						hold[token] = value
 						return data
-					if not @isObject(hold[token]) && not hold[token].constructor is Array
+					if not @isObject(hold[token]) && not @isArray(hold[token])
 						if not isNaN parseInt tokens[_i + 1]
 							hold[token] = []
 						else
@@ -60,7 +60,7 @@
 				else if operation is 'remove'
 					if _i is tokens.length - 1
 						(removed = {}).item = hold[token]
-						if hold.constructor is Array
+						if @isArray(hold)
 							Array.prototype.splice.call hold, token, 1
 						else
 							delete hold[token]
@@ -74,7 +74,7 @@
 			tokens = @tokenize path
 
 			for token in tokens
-				if @isObject(out) or out.constructor is Array and out[token]?
+				if @isObject(out) or (out and @isArray(out)) and out[token]?
 					out = out[token]
 				else
 					return null
@@ -122,7 +122,7 @@
 			out = {}
 
 			while (@.keys(data).length)
-				if data.constructor is Array and data.length > 0
+				if @isArray(data) and data.length > 0
 					key = data.length - 1
 					el = data.pop()
 				else
@@ -144,7 +144,7 @@
 			out = objects.shift()
 			for object in objects
 				for own key, value of object
-					if out[key] and value and (@isObject(out[key]) and @isObject(value) or out[key].constructor is Array)
+					if out[key] and value and (@isObject(out[key]) and @isObject(value) or @isArray(out[key]))
 						out[key] = @merge out[key], value
 					else
 						out[key] = value
@@ -172,16 +172,15 @@
 					v = v.replace /\]/, ''
 					if v is '' then '{n}' else v
 		isObject: (item) ->
-			if typeof item is 'object' and item.toString() is '[object Object]' and item.constructor is Object
-				return true
-			else
-				return false
+			return typeof item is 'object' and Object.prototype.toString.call(item) is '[object Object]'
+		isArray: (item) ->
+			return typeof item is 'object' and typeof item.length is 'number' and Object.prototype.toString.call(item) is '[object Array]'
 		keys: (object) ->
 			keys = []
 			if @isObject object
 				for own key of object
 					keys.push key
-			else if object.constructor is Array
+			else if @isArray(object)
 				for key in object
 					keys.push _i
 			keys
