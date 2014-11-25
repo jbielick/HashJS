@@ -1,8 +1,10 @@
-((factory) -> 
+((factory, root) ->
 	if typeof define is 'function' and define.amd
 		define [], factory
+	else if typeof module is not 'undefined' && module.exports
+		module.exports = factory()
 	else
-		window.Hash = factory()
+		root.Hash = factory()
 )(() ->
 	class Hash
 		remove: (data, path) ->
@@ -162,7 +164,7 @@
 				path.replace(/\]/g, '').split('[').join('.')
 			else
 				path.replace(/([\w]+)\.?/g, '[$1]').replace(/^\[(\w+)\]/, '$1')
-		tokenize: (path) -> 
+		tokenize: (path) ->
 			if path.indexOf('[') is -1
 				path.split '.'
 			else
@@ -170,9 +172,9 @@
 					v = v.replace /\]/, ''
 					if v is '' then '{n}' else v
 		isObject: (item) ->
-			if typeof item is 'object' and item.toString() is '[object Object]' and item.constructor is Object 
+			if typeof item is 'object' and item.toString() is '[object Object]' and item.constructor is Object
 				return true
-			else 
+			else
 				return false
 		keys: (object) ->
 			keys = []
@@ -185,4 +187,4 @@
 			keys
 
 		Hash = new Hash()
-)
+, this)
