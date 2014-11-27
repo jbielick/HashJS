@@ -226,7 +226,7 @@
         return out;
       };
 
-      Hash.prototype.merge = function() {
+      Hash.prototype.merge = Object.assign ? Object.assign : function() {
         var key, object, objects, out, value, _i, _len;
         objects = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         out = objects.shift();
@@ -291,11 +291,11 @@
         return typeof item === 'object' && Object.prototype.toString.call(item) === '[object Object]';
       };
 
-      Hash.prototype.isArray = function(item) {
+      Hash.prototype.isArray = Array.isArray ? Array.isArray : function(item) {
         return typeof item === 'object' && typeof item.length === 'number' && Object.prototype.toString.call(item) === '[object Array]';
       };
 
-      Hash.prototype.keys = function(object) {
+      Hash.prototype.keys = Object.keys ? Object.keys : function(object) {
         var key, keys, _i, _len;
         keys = [];
         if (this.isObject(object)) {
