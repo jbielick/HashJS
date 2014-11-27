@@ -20,11 +20,7 @@
     "xpath",
     "javascript"
   ],
-  "dependencies": {
-    "chai": "^1.10.0",
-    "istanbul": "^0.3.2",
-    "mocha": "^2.0.1"
-  },
+  "dependencies": {},
   "bugs": {
     "url": "https://github.com/jbielick/HashJS/issues"
   },
@@ -36,5 +32,10 @@
   ],
   "readmeFilename": "README.md",
   "_id": "hashjs@0.0.7",
-  "_from": "hashjs@"
+  "_from": "hashjs@",
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "istanbul": "^0.3.2",
+    "mocha": "^2.0.1"
+  }
 }
