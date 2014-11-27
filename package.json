@@ -6,6 +6,9 @@
     "email": "jbielick@gmail.com",
     "url": "http://github.com/jbielick"
   },
+  "scripts": {
+    "test": "make test"
+  },
   "description": "A library of functions for safely accessing, maniuplating, transforming, traversing and extracting from javascript objects",
   "main": "./index.js",
   "repository": {
@@ -17,7 +20,10 @@
     "xpath",
     "javascript"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "istanbul": "^0.3.2",
+    "mocha": "^2.0.1"
+  },
   "bugs": {
     "url": "https://github.com/jbielick/HashJS/issues"
   },
