@@ -1,5 +1,7 @@
 #hash-js
--------
+
+[![Build Status](https://travis-ci.org/jbielick/hash-js.svg)](https://travis-ci.org/jbielick/hash-js)
+[![Coverage Status](https://img.shields.io/coveralls/jbielick/hash-js.svg)](https://coveralls.io/r/jbielick/hash-js)
 
 A library of functions for javascript object traversal, manipulation and extraction. Safely access, extract, rearrange and transform deeply nested objects and structures.
 
