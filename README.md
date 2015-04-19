@@ -20,8 +20,8 @@ Install as a node module with npm:
 ```
 
 var flatPathsAndKeys = {
-	'User.Post.Tag.0.name': 'Fishing',
-	'User.Post.Tag.1.name': 'Selfies',
+	'User.Post.Tag[0]name': 'Fishing',
+	'User.Post.Tag[1]name': 'Selfies',
 };
 
 H.expand(flatPathsAndKeys);
