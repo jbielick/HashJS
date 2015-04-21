@@ -240,6 +240,26 @@ describe('insert', function() {
 
     });
 
+    describe('with an empty object', function() {
+
+      var data;
+
+      beforeEach(function() {
+        data = {};
+      });
+
+      it('doesn\'t insert at exotic paths', function() {
+        hash.insert(data, 'one.two.{n}.four', 3);
+        expect(data).to.deep.eql({});
+      });
+
+      it('insert at simple path', function() {
+        hash.insert(data, 'one.two.three[4]', 111);
+        expect(data.one.two.three[4]).to.eql(111);
+      });
+
+    });
+
   });
 
 });
@@ -252,7 +272,6 @@ describe('expand', function() {
     xit('expands a single path', function() {
 
       var nested = hash.expand({'one.two.three.four[5]': 6});
-
       expect(nested).to.deep.eql({
         one: {
           two: {
@@ -271,9 +290,7 @@ describe('expand', function() {
 
     });
 
-    it('expands multiple paths', function() {
-
-
+    xit('expands multiple paths', function() {
 
     });
 

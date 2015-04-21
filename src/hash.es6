@@ -13,20 +13,14 @@ export function get(object, path) {
 
   let current = object;
   let tokens = tokenize(path);
-  let token;
+  let token = tokens.shift();
 
-  for (token of tokens) {
-    // check has owns only; no prototype properties
-    if (Object.prototype.hasOwnProperty.call(current, token)) {
-      current = current[token];
-    } else {
-      // break early, token not in current object
-      current = void 0;
-      break;
-    }
-  };
-
-  return current;
+  // check owns only; no prototype properties
+  if (Object.prototype.hasOwnProperty.call(current, token)) {
+    return tokens.length > 0 ? get(current[token], tokens) : current[token];
+  } else {
+    return;
+  }
 }
 
 /**
@@ -39,6 +33,7 @@ export function get(object, path) {
  */
 export function insert(object, path, value) {
 
+  // if the path has no wildcard / enum tokens, a simple insert will do
   if (isSimplePath(path)) {
     return _simpleInsert(object, path, value);
   }
@@ -52,11 +47,11 @@ export function insert(object, path, value) {
 
   for ([i, key] of keys.entries()) {
     if (keyMatchesToken(key, token)) {
-      if (tokens.length < 1) {
-        object[key] = value;
-      } else {
+      if (tokens.length > 0) {
         destination = object[key] || (isNumber(key) ? [] : {});
         object[key] = insert(destination, [].slice.call(tokens), value);
+      } else {
+        object[key] = value;
       }
     }
   }
@@ -66,6 +61,9 @@ export function insert(object, path, value) {
 
 
 export function expand(flat) {
+
+  let current = {};
+
 
   // out = {}
   // if (flat.constructor isnt Array)

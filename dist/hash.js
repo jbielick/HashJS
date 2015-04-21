@@ -39,27 +39,67 @@ exports._simpleInsert = _simpleInsert;
 exports._simpleRemove = _simpleRemove;
 exports.tokenize = tokenize;
 
-function get(object, path) {
+function get(_x3, _x4) {
+  var _again = true;
 
-  var current = object;
+  _function: while (_again) {
+    current = tokens = token = undefined;
+    _again = false;
+    var object = _x3,
+        path = _x4;
+
+    var current = object;
+    var tokens = tokenize(path);
+    var token = tokens.shift();
+
+    // check owns only; no prototype properties
+    if (Object.prototype.hasOwnProperty.call(current, token)) {
+      if (tokens.length > 0) {
+        _x3 = current[token];
+        _x4 = tokens;
+        _again = true;
+        continue _function;
+      } else {
+        return current[token];
+      }
+    } else {
+      return;
+    }
+  }
+}
+
+function insert(object, path, value) {
+
+  // if the path has no wildcard / enum tokens, a simple insert will do
+  if (isSimplePath(path)) {
+    return _simpleInsert(object, path, value);
+  }
+
   var tokens = tokenize(path);
-  var token = undefined;
+  var token = tokens.shift();
+  var keys = Object.keys(object);
+  var destination = undefined;
+  var key = undefined;
+  var i = undefined;
 
   var _iteratorNormalCompletion = true;
   var _didIteratorError = false;
   var _iteratorError = undefined;
 
   try {
-    for (var _iterator = tokens[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      token = _step.value;
+    for (var _iterator = keys.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _step$value = _slicedToArray(_step.value, 2);
 
-      // check has owns only; no prototype properties
-      if (Object.prototype.hasOwnProperty.call(current, token)) {
-        current = current[token];
-      } else {
-        // break early, token not in current object
-        current = void 0;
-        break;
+      i = _step$value[0];
+      key = _step$value[1];
+
+      if (keyMatchesToken(key, token)) {
+        if (tokens.length > 0) {
+          destination = object[key] || (isNumber(key) ? [] : {});
+          object[key] = insert(destination, [].slice.call(tokens), value);
+        } else {
+          object[key] = value;
+        }
       }
     }
   } catch (err) {
@@ -77,22 +117,41 @@ function get(object, path) {
     }
   }
 
-  ;
-
-  return current;
+  return object;
 }
 
-function insert(object, path, value) {
+function expand(flat) {
 
-  if (isSimplePath(path)) {
-    return _simpleInsert(object, path, value);
-  }
+  var current = {};
+
+  // out = {}
+  // if (flat.constructor isnt Array)
+  //   flat = [flat]
+  // for set in flat
+  //   for own path, value of set
+  //     tokens = @tokenize(path).reverse()
+  //     value = set[path]
+  //     if tokens[0] is '{n}' or not isNaN Number tokens[0]
+  //       (child = [])[tokens[0]] = value;
+  //     else
+  //       (child = {})[tokens[0]] = value;
+  //     tokens.shift()
+  //     for token in tokens
+  //       if not isNaN Number token
+  //         (parent = [])[parseInt(token, 10)] = child
+  //       else
+  //         (parent = {})[token] = child
+  //       child = parent
+  //     @merge(out, child)
+  // out
+}
+
+function _simpleInsert(object, path, value) {
 
   var tokens = tokenize(path);
-  var token = tokens.shift();
-  var keys = Object.keys(object);
-  var destination = undefined;
-  var key = undefined;
+  var lastToken = tokens.pop();
+  var current = object;
+  var token = undefined;
   var i = undefined;
 
   var _iteratorNormalCompletion2 = true;
@@ -100,20 +159,16 @@ function insert(object, path, value) {
   var _iteratorError2 = undefined;
 
   try {
-    for (var _iterator2 = keys.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+    for (var _iterator2 = tokens.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
       var _step2$value = _slicedToArray(_step2.value, 2);
 
       i = _step2$value[0];
-      key = _step2$value[1];
+      token = _step2$value[1];
 
-      if (keyMatchesToken(key, token)) {
-        if (tokens.length < 1) {
-          object[key] = value;
-        } else {
-          destination = object[key] || (isNumber(key) ? [] : {});
-          object[key] = insert(destination, [].slice.call(tokens), value);
-        }
+      if (!current[token]) {
+        current[token] = isNumber(tokens[i + 1] || lastToken) ? [] : {};
       }
+      current = current[token];
     }
   } catch (err) {
     _didIteratorError2 = true;
@@ -130,50 +185,6 @@ function insert(object, path, value) {
     }
   }
 
-  return object;
-}
-
-function expand(flat) {}
-
-function _simpleInsert(object, path, value) {
-
-  var tokens = tokenize(path);
-  var lastToken = tokens.pop();
-  var current = object;
-  var token = undefined;
-  var i = undefined;
-
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
-
-  try {
-    for (var _iterator3 = tokens.entries()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      var _step3$value = _slicedToArray(_step3.value, 2);
-
-      i = _step3$value[0];
-      token = _step3$value[1];
-
-      if (!current[token]) {
-        current[token] = isNumber(tokens[i + 1] || lastToken) ? [] : {};
-      }
-      current = current[token];
-    }
-  } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-        _iterator3['return']();
-      }
-    } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
-      }
-    }
-  }
-
   ;
 
   current[lastToken] = value;
@@ -186,25 +197,25 @@ function _simpleRemove(object, path) {
   var current = object;
   var token = undefined;
 
-  var _iteratorNormalCompletion4 = true;
-  var _didIteratorError4 = false;
-  var _iteratorError4 = undefined;
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
 
   try {
-    for (var _iterator4 = tokens[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-      token = _step4.value;
+    for (var _iterator3 = tokens[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      token = _step3.value;
     }
   } catch (err) {
-    _didIteratorError4 = true;
-    _iteratorError4 = err;
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion4 && _iterator4['return']) {
-        _iterator4['return']();
+      if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+        _iterator3['return']();
       }
     } finally {
-      if (_didIteratorError4) {
-        throw _iteratorError4;
+      if (_didIteratorError3) {
+        throw _iteratorError3;
       }
     }
   }
@@ -294,25 +305,4 @@ function isEmptyObject(object) {
 function isNumber(object) {
   return typeof object === 'number' && object % 1 === 0;
 }
-
-// out = {}
-// if (flat.constructor isnt Array)
-//   flat = [flat]
-// for set in flat
-//   for own path, value of set
-//     tokens = @tokenize(path).reverse()
-//     value = set[path]
-//     if tokens[0] is '{n}' or not isNaN Number tokens[0]
-//       (child = [])[tokens[0]] = value;
-//     else
-//       (child = {})[tokens[0]] = value;
-//     tokens.shift()
-//     for token in tokens
-//       if not isNaN Number token
-//         (parent = [])[parseInt(token, 10)] = child
-//       else
-//         (parent = {})[token] = child
-//       child = parent
-//     @merge(out, child)
-// out
 //# sourceMappingURL=hash.js.map
