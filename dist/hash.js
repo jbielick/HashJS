@@ -1,7 +1,5 @@
 'use strict';
 
-var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } };
-
 Object.defineProperty(exports, '__esModule', {
   value: true
 });
@@ -36,6 +34,7 @@ exports.expand = expand;
  * @return {Mixed}        original object (modified)
  */
 exports._simpleInsert = _simpleInsert;
+exports.copy = copy;
 exports._simpleRemove = _simpleRemove;
 exports.tokenize = tokenize;
 
@@ -43,28 +42,27 @@ function get(_x3, _x4) {
   var _again = true;
 
   _function: while (_again) {
-    current = tokens = token = undefined;
+    tokens = token = undefined;
     _again = false;
     var object = _x3,
         path = _x4;
 
-    var current = object;
     var tokens = tokenize(path);
     var token = tokens.shift();
 
+    if (typeof token === 'undefined') {
+      return object;
+    }
+
     // check owns only; no prototype properties
-    if (Object.prototype.hasOwnProperty.call(current, token)) {
-      if (tokens.length > 0) {
-        _x3 = current[token];
-        _x4 = tokens;
-        _again = true;
-        continue _function;
-      } else {
-        return current[token];
-      }
-    } else {
+    if (!object || !Object.prototype.hasOwnProperty.call(object, token)) {
       return;
     }
+
+    _x3 = object[token];
+    _x4 = tokens;
+    _again = true;
+    continue _function;
   }
 }
 
@@ -75,49 +73,26 @@ function insert(object, path, value) {
     return _simpleInsert(object, path, value);
   }
 
+  var current = copy(object);
   var tokens = tokenize(path);
   var token = tokens.shift();
-  var keys = Object.keys(object);
+  var keys = undefined;
   var destination = undefined;
   var key = undefined;
   var i = undefined;
 
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = keys.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var _step$value = _slicedToArray(_step.value, 2);
-
-      i = _step$value[0];
-      key = _step$value[1];
-
-      if (keyMatchesToken(key, token)) {
-        if (tokens.length > 0) {
-          destination = object[key] || (isNumber(key) ? [] : {});
-          object[key] = insert(destination, [].slice.call(tokens), value);
-        } else {
-          object[key] = value;
-        }
-      }
+  Object.keys(current).filter(function (key) {
+    return keyMatchesToken(key, token);
+  }).forEach(function (key, i) {
+    if (tokens.length > 0) {
+      destination = current[key] || (isNumber(key) ? [] : {});
+      current[key] = insert(destination, [].slice.call(tokens), value);
+    } else {
+      current[key] = value;
     }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator['return']) {
-        _iterator['return']();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
+  });
 
-  return object;
+  return current;
 }
 
 function expand(flat) {
@@ -149,47 +124,26 @@ function expand(flat) {
 function _simpleInsert(object, path, value) {
 
   var tokens = tokenize(path);
-  var lastToken = tokens.pop();
-  var current = object;
-  var token = undefined;
-  var i = undefined;
+  var token = tokens.shift();
+  var current = copy(object);
+  var destination = undefined;
 
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
-
-  try {
-    for (var _iterator2 = tokens.entries()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var _step2$value = _slicedToArray(_step2.value, 2);
-
-      i = _step2$value[0];
-      token = _step2$value[1];
-
-      if (!current[token]) {
-        current[token] = isNumber(tokens[i + 1] || lastToken) ? [] : {};
-      }
-      current = current[token];
-    }
-  } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-        _iterator2['return']();
-      }
-    } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
-      }
-    }
+  if (tokens.length > 0) {
+    destination = current[token] || (isNumber(tokens[0]) ? [] : {});
+    current[token] = _simpleInsert(destination, tokens, value);
+  } else {
+    current[token] = value;
   }
 
-  ;
+  return current;
+}
 
-  current[lastToken] = value;
-
-  return object;
+function copy(object) {
+  var copied = isArray(object) ? [] : {};
+  Object.keys(object).forEach(function (key, i) {
+    copied[key] = object[key];
+  });
+  return copied;
 }
 
 function _simpleRemove(object, path) {
@@ -197,25 +151,25 @@ function _simpleRemove(object, path) {
   var current = object;
   var token = undefined;
 
-  var _iteratorNormalCompletion3 = true;
-  var _didIteratorError3 = false;
-  var _iteratorError3 = undefined;
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
 
   try {
-    for (var _iterator3 = tokens[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-      token = _step3.value;
+    for (var _iterator = tokens[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      token = _step.value;
     }
   } catch (err) {
-    _didIteratorError3 = true;
-    _iteratorError3 = err;
+    _didIteratorError = true;
+    _iteratorError = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion3 && _iterator3['return']) {
-        _iterator3['return']();
+      if (!_iteratorNormalCompletion && _iterator['return']) {
+        _iterator['return']();
       }
     } finally {
-      if (_didIteratorError3) {
-        throw _iteratorError3;
+      if (_didIteratorError) {
+        throw _iteratorError;
       }
     }
   }

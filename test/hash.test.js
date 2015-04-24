@@ -116,8 +116,9 @@ describe('insert', function() {
       it('sets a value to a simple path', function() {
 
         var data = {};
-        hash.insert(data, 'one.two.three', 4);
-        expect(data).to.deep.eq({
+        var inserted = hash.insert(data, 'one.two.three', 4);
+        expect(data.one).to.be.undefined;
+        expect(inserted).to.deep.eq({
           one: {
             two: {
               three: 4
@@ -129,8 +130,9 @@ describe('insert', function() {
       it('sets a value to a simple path with indices', function() {
 
         var data = {};
-        hash.insert(data, 'one[2].three[4][0]', 'shlomo');
-        expect(data.one[2].three[4][0]).to.eq('shlomo');
+        var inserted = hash.insert(data, 'one[2].three[4][0]', 'shlomo');
+        expect(data.one).to.be.undefined;
+        expect(inserted.one[2].three[4][0]).to.eq('shlomo');
 
       });
 
@@ -159,8 +161,9 @@ describe('insert', function() {
       });
 
       it('sets a value to a simple path', function() {
-        hash.insert(data, 'one.two[2].three.four[1]', 6);
-        expect(data.one.two[2].three.four[1]).to.eq(6);
+        var inserted = hash.insert(data, 'one.two[2].three.four[1]', 6);
+        expect(data.one.two[2].three.four[1]).to.be.undefined;
+        expect(inserted.one.two[2].three.four[1]).to.eq(6);
       });
 
     });
@@ -198,43 +201,49 @@ describe('insert', function() {
 
       it('sets a value at an exotic {s} path', function() {
 
-        hash.insert(data, 'one.two[2].three.{s}', 99);
+        var inserted = hash.insert(data, 'one.two[2].three.{s}', 99);
 
-        expect(data.one.two[2].three.four).to.eq(99);
-        expect(data.one.two[2].three.six).to.eq(99);
-        expect(data.one.two[2].three.eight).to.eq(99);
+        expect(inserted.one.two[2].three.four).to.eq(99);
+        expect(data.one.two[2].three.four).to.eql(5);
+        expect(inserted.one.two[2].three.six).to.eq(99);
+        expect(data.one.two[2].three.six).to.eql(7);
+        expect(inserted.one.two[2].three.eight).to.eq(99);
+        expect(data.one.two[2].three.eight).to.eql(['nine']);
 
       });
 
       it('sets a value at an exotic {n} path', function() {
 
-        hash.insert(data, 'one.two.{n}.three.four', 'grizzly');
+        var inserted = hash.insert(data, 'one.two.{n}.three.four', 'grizzly');
 
-        expect(data.one.two[0].three.four).to.eq('grizzly');
-        expect(data.one.two[1].three.four).to.eq('grizzly');
-        expect(data.one.two[2].three.four).to.eq('grizzly');
+        expect(inserted.one.two[0].three.four).to.eq('grizzly');
+        expect(data.one.two[0]).to.be.undefined;
+        expect(inserted.one.two[1].three.four).to.eq('grizzly');
+        expect(data.one.two[1]).to.be.undefined;
+        expect(inserted.one.two[2].three.four).to.eq('grizzly');
+        expect(data.one.two[2].three.four).to.eql(5);
 
       });
 
       xit('sets a value at an exotic regex path', function() {
 
-        hash.insert(data, 'one.[/two/].three', 1234);
+        var inserted = hash.insert(data, 'one.[/two/].three', 1234);
 
-        expect(data.one.two.three).to.eql(1234);
-        expect(data.one.twotwo.three).to.eql(1234);
+        expect(inserted.one.two.three).to.eql(1234);
+        expect(inserted.one.twotwo.three).to.eql(1234);
 
       });
 
       xit('sets a value at a combination exotic path', function() {
 
-        hash.insert(data, 'one.two.{n}.three.[/[a-z]{4,}/].ten', 10);
+        var inserted = hash.insert(data, 'one.two.{n}.three.[/[a-z]{4,}/].ten', 10);
 
-        expect(data.one.two[0].three.four.ten).to.eq(10);
-        expect(data.one.two[0].three.eight.ten).to.eq(10);
-        expect(data.one.two[1].three.four.ten).to.eq(10);
-        expect(data.one.two[1].three.eight.ten).to.eq(10);
-        expect(data.one.two[2].three.four.ten).to.eq(10);
-        expect(data.one.two[2].three.eight.ten).to.eq(10);
+        expect(inserted.one.two[0].three.four.ten).to.eq(10);
+        expect(inserted.one.two[0].three.eight.ten).to.eq(10);
+        expect(inserted.one.two[1].three.four.ten).to.eq(10);
+        expect(inserted.one.two[1].three.eight.ten).to.eq(10);
+        expect(inserted.one.two[2].three.four.ten).to.eq(10);
+        expect(inserted.one.two[2].three.eight.ten).to.eq(10);
 
       });
 
@@ -249,13 +258,15 @@ describe('insert', function() {
       });
 
       it('doesn\'t insert at exotic paths', function() {
-        hash.insert(data, 'one.two.{n}.four', 3);
+        var inserted = hash.insert(data, 'one.two.{n}.four', 3);
         expect(data).to.deep.eql({});
+        expect(inserted).to.deep.eql({});
       });
 
       it('insert at simple path', function() {
-        hash.insert(data, 'one.two.three[4]', 111);
-        expect(data.one.two.three[4]).to.eql(111);
+        var inserted = hash.insert(data, 'one.two.three[4]', 111);
+        expect(data.one).to.be.undefined;
+        expect(inserted.one.two.three[4]).to.eql(111);
       });
 
     });
@@ -299,6 +310,25 @@ describe('expand', function() {
   describe('given tuples', function() {
 
 
+
+  });
+
+});
+
+describe('#copy', function() {
+
+  it('copies all own/enumerable keys', function() {
+
+    var data = {
+      one: 'two',
+      three: 'four',
+      five: 'six',
+      seven: {eight: 'nine'}
+    };
+
+    var copy = hash.copy(data);
+
+    expect(copy).to.deep.eql(data);
 
   });
 

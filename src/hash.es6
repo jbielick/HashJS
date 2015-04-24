@@ -11,16 +11,17 @@
  */
 export function get(object, path) {
 
-  let current = object;
   let tokens = tokenize(path);
   let token = tokens.shift();
 
+  if (typeof token === 'undefined') { return object; }
+
   // check owns only; no prototype properties
-  if (Object.prototype.hasOwnProperty.call(current, token)) {
-    return tokens.length > 0 ? get(current[token], tokens) : current[token];
-  } else {
+  if (!object || !Object.prototype.hasOwnProperty.call(object, token)) {
     return;
   }
+
+  return get(object[token], tokens);
 }
 
 /**
@@ -38,25 +39,26 @@ export function insert(object, path, value) {
     return _simpleInsert(object, path, value);
   }
 
+  let current = copy(object)
   let tokens = tokenize(path);
   let token = tokens.shift();
-  let keys = Object.keys(object);
+  let keys;
   let destination;
   let key;
   let i;
 
-  for ([i, key] of keys.entries()) {
-    if (keyMatchesToken(key, token)) {
+  Object.keys(current)
+    .filter(key => keyMatchesToken(key, token))
+    .forEach((key, i) => {
       if (tokens.length > 0) {
-        destination = object[key] || (isNumber(key) ? [] : {});
-        object[key] = insert(destination, [].slice.call(tokens), value);
+        destination = current[key] || (isNumber(key) ? [] : {});
+        current[key] = insert(destination, [].slice.call(tokens), value);
       } else {
-        object[key] = value;
+        current[key] = value;
       }
-    }
-  }
+    });
 
-  return object;
+  return current;
 }
 
 
@@ -98,23 +100,25 @@ export function expand(flat) {
 export function _simpleInsert(object, path, value) {
 
   let tokens = tokenize(path);
-  let lastToken = tokens.pop();
-  let current = object;
-  let token;
-  let i;
+  let token = tokens.shift();
+  let current = copy(object);
+  let destination;
 
-  for ([i, token] of tokens.entries()) {
-    if (!current[token]) {
-      current[token] = (isNumber(tokens[i + 1] || lastToken) ? [] : {});
-    }
-    current = current[token];
-  };
+  if (tokens.length > 0) {
+    destination = current[token] || (isNumber(tokens[0]) ? [] : {});
+    current[token] = _simpleInsert(destination, tokens, value);
+  } else {
+    current[token] = value;
+  }
 
-  current[lastToken] = value;
-
-  return object;
+  return current;
 }
 
+export function copy(object) {
+  let copied = isArray(object) ? [] : {};
+  Object.keys(object).forEach( (key, i) => { copied[key] = object[key]; });
+  return copied;
+}
 
 export function _simpleRemove(object, path) {
   let tokens = tokenize(path);
@@ -175,9 +179,7 @@ function keyMatchesToken(key, token) {
 
 function isSimplePath(path = '') {
   if (isArray(path)) {
-    return !path.some(token => {
-      return isRegExp(token) || /\{(n|s)\}/.test(token);
-    });
+    return !path.some(token => isRegExp(token) || /\{(n|s)\}/.test(token));
   } else {
     return !/\{|\[\//.test(path);
   }
